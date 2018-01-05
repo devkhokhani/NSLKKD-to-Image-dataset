@@ -1,0 +1,10 @@
+import pandas as pd
+import numpy as np
+
+data = pd.read_csv('C:\\Users\\Devanshu\\Desktop\\20_p_n1.csv',sep=',')
+data['F'].unique()
+list = data['F'].tolist()
+#print(list)
+x= pd.cut(list, 10)
+y= pd.get_dummies(x, prefix=None, prefix_sep='_', dummy_na=False, columns=None, sparse=False, drop_first=False)
+np.savetxt('C:\\Users\\Devanshu\\Desktop\\pa.csv',y,fmt='%5s',delimiter=',')
