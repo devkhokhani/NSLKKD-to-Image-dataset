@@ -1,0 +1,44 @@
+import numpy as np
+import sys
+import os
+import pandas as p
+import matplotlib.pyplot as pl
+#list = np.genfromtxt('C:\\Users\\Devanshu\\Desktop\\one_hot.csv', dtype=int, delimiter=',', names=True)
+#print(list)
+
+#read data
+
+x= p.read_csv('C:\\Users\\Devanshu\\Desktop\\final_1.csv', low_memory=False,header=None)
+#display the file 
+x.head(5)
+
+#limit the selection to nominal data with X = X.select_dtypes(include=[object]) and the check check if the records are still the same. In my case my csv file only had nominal data.
+x.shape
+
+#use the sklearn library for preprocessing. If you dont have the library install then use conda install sklearn from cmd(windows)
+
+from sklearn import preprocessing
+x.columns
+
+#use LabelEncoder class to encode the nominal values. sklearn does the encoding by itself
+le= preprocessing.LabelEncoder()
+x_2= x.apply(le.fit_transform)
+x_2.head()
+
+# TODO: create a OneHotEncoder object, and fit it to all of X
+
+# 1. INSTANTIATE
+enc = preprocessing.OneHotEncoder()
+
+# 2. FIT
+enc.fit(x_2)
+
+# 3. Transform
+onehotlabels = enc.transform(x_2).toarray()
+onehotlabels.shape
+
+#print the output one hot code labels
+onehotlabels
+
+#save the output to csv file using numpy library
+np.savetxt('C:\\Users\\Devanshu\\Desktop\\categorical value\\one_hot_pro.csv', onehotlabels, delimiter=",")
