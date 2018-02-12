@@ -1,0 +1,44 @@
+import pandas as pd
+ca= pd.read_csv('C:\\Users\\Desktop\\20c.csv',header=0, sep=",",low_memory=False,usecols=[1,2,3], index_col= False)
+#print(ca)
+# One-hot encoding on categorical data. In nsl-kdd we have 3 columns that are have categorical values. Either you can import whole nslkdd csv file or you can process on individual categorical column as well. Code remains the same
+
+from sklearn.preprocessing import OneHotEncoder
+from sklearn import preprocessing
+x= ca.columns[[0,1,2]]
+#use LabelEncoder class to encode the nominal values. sklearn does the encoding by itself
+
+le= preprocessing.LabelEncoder()
+x_2= ca.apply(le.fit_transform)
+x_2.head()
+
+# TODO: create a OneHotEncoder object, and fit it to all of X
+
+# 1. INSTANTIATE
+enc = preprocessing.OneHotEncoder()
+
+# 2. FIT
+enc.fit(x_2)
+
+# 3. Transform
+onehotlabels = enc.transform(x_2).toarray()
+onehotlabels.shape
+
+#print the output one hot code labels
+print(onehotlabels)
+df1= pd.DataFrame(onehotlabels)
+df1.to_csv('C:\\Users\\Desktop\\category_output.csv', sep=',', na_rep='', float_format=None, index_label=None)    
+
+# Numerical data pre-processing/ Normalization of values between 0 and 1
+# For now Please remove the alphabetical/categorical data from your csv and then read file
+my_data= pd.read_csv('C:\\Users\\Desktop\\20.csv',header=None, sep=",")
+def min_max(my_data):
+    #print(my_data)
+    # min-max nomrmalization is preformed on the data. Here axis=0 means that it will select columns to process rather than row.
+    a = my_data.sub(my_data.min(axis=0))
+    b = my_data.max(axis=0).sub(my_data.min(axis=0))
+    df = a.div(b)
+    #print (df)
+    df.to_csv('C:\\Users\\Desktop\\minmax.csv', sep=',', na_rep='', float_format=None,header=True, index=True, index_label=None)
+    
+min_max(my_data)
