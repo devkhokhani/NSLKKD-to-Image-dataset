@@ -1,0 +1,147 @@
+# Import necessary libraries
+
+import pandas as pd
+import numpy as np
+from sklearn import preprocessing
+
+# NSlKDD consists of 41 columns which in raw data are not mentioned. Labels have to be mapped according to type of attack before using this code for final output.
+
+col=["duration","protocol_type","service","flag","src_bytes","dst_bytes","land","wrong_fragment","urgent","hot","num_failed_logins","logged_in","num_compromised","root_shell","su_attempted","num_root","num_file_creations","num_shells","num_access_files","num_outbound_cmds","is_host_login","is_guest_login","count","srv_count","serror_rate","srv_serror_rate","rerror_rate","srv_rerror_rate","same_srv_rate","diff_srv_rate","srv_diff_host_rate","dst_host_count","dst_host_srv_count","dst_host_same_srv_rate","dst_host_diff_srv_rate","dst_host_same_src_port_rate","dst_host_srv_diff_host_rate","dst_host_serror_rate","dst_host_srv_serror_rate","dst_host_rerror_rate","dst_host_srv_rerror_rate","label"] 
+
+data_train= pd.read_csv('C:/Users/Devanshu/Desktop/faltu/KDDTrain+.csv', sep=',', names= col,header=None)
+data_test=pd.read_csv('C:/Users/Devanshu/Desktop/faltu/KDDTest+.csv', sep=',', names= col,header=None)
+print(data_train.shape)
+#print(data_test)
+
+# Concat train and test dataset to ease preprocessing:
+
+df= pd.concat([data_train, data_test])
+#print(df)
+#total [148516 rows x 42 columns]
+
+# one hot encode the label with sklearn label encoder 
+df_label=df.label
+df_label=df.label[0:125972]
+#print(df_label)
+
+le= preprocessing.LabelEncoder()
+le.fit(df_label)
+print(le.classes_)
+a= le.transform(df_label) 
+print(a)
+tra= pd.DataFrame(a)
+enc = preprocessing.OneHotEncoder()
+enc.fit(tra)
+onehotlabels = enc.transform(tra).toarray()
+onehotlabels.shape
+
+np.savetxt('C:/Users/Devanshu/Desktop/faltu/label_encoded.csv', onehotlabels, fmt='%.18e', delimiter=',', newline='\n', header='', footer='', comments='# ')
+
+# There are some labels not available in test dataset so we are preprocessing seperatley train and test. If you want to ignore missing labels then you can modify the code like wise
+
+df_label_test=df.label[125973:148516]
+#print(df_label_test)
+le1= preprocessing.LabelEncoder()
+le1.fit(df_label_test)
+a1= le1.transform(df_label_test) 
+print(a1)
+tra_test= pd.DataFrame(a1)
+
+enc1 = preprocessing.OneHotEncoder()
+enc1.fit(tra_test)
+onehotlabels1 = enc1.transform(tra_test).toarray()
+onehotlabels1.shape
+np.savetxt('C:/Users/Devanshu/Desktop/faltu/label_encoded_test.csv', onehotlabels1, fmt='%.18e', delimiter=',', newline='\n', header='', footer='', comments='# ')
+
+# drop column='label' & 'num_outbound_cmds' from df as labels are to be one hot encoded and num_outbound_cmds has only value 0
+# which will have no effect on overall data.
+
+new_df= df.drop(labels=["num_outbound_cmds","label"],axis=1)
+#print(new_df.head(3))
+
+for i in range(len(new_df.columns)):
+    count = i+0
+    name = new_df.columns[count]
+    if name== 'protocol_type' :
+        le = preprocessing.LabelEncoder()
+        le.fit(new_df[name])
+        a= le.transform(new_df[name])
+        x= np.reshape(a,(-1,1))
+        new1= np.asarray(x).reshape(1, -1)[0,:]
+        new_df1= pd.DataFrame({'protocol_type': new1})
+        new_df.update(new_df1, overwrite= True)
+        #print(data)
+        print('Protocol_type')
+        #print(x)
+    elif name=='service' :
+        le = preprocessing.LabelEncoder()
+        le.fit(new_df[name])
+        b= le.transform(new_df[name])
+        y= np.reshape(b,(-1,1))
+        new2= np.asarray(y).reshape(1, -1)[0,:]
+        new_df2= pd.DataFrame({'service': new2})
+        new_df.update(new_df2, overwrite= True)
+        #print('Service')
+        #print(y)
+    elif name=='flag':
+        le = preprocessing.LabelEncoder()
+        le.fit(new_df[name])
+        c= le.transform(new_df[name])
+        z= np.reshape(c,(-1,1))
+        new3= np.asarray(z).reshape(1, -1)[0,:]
+        new_df3= pd.DataFrame({'flag': new3})
+        new_df.update(new_df3, overwrite= True)
+        #print(data)
+       # print('flag')
+        #print(z)
+        
+
+        
+#data.to_csv('C:\\Users\\Devanshu\\Desktop\\concat_label.csv', sep=',', na_rep='', float_format=None, index_label=None)
+
+# Min-max normaliztion on dataframe
+
+g= new_df.sub(new_df.min(axis=0))
+h= (new_df.max(axis=0)).sub(new_df.min(axis=0))
+f= g.div(h)
+
+#print(f)
+
+np.savetxt('C:/Users/Devanshu/Desktop/faltu/combine_normalize.csv', f, fmt='%.18e', delimiter=',', newline='\n', header='', footer='', comments='# ')
+
+# Read the normalized data for futher discretization and greyscale conversion
+
+disct_df= pd.read_csv('C:/Users/Devanshu/Desktop/faltu/combine_normalize.csv', sep=',',header=None)
+#print(disct_df.head(3))
+
+disct_df.columns
+
+def interval(disct_df):
+
+    z= np.zeros((148516,400))
+    for i in range(len(disct_df.columns)):
+        count=0+i
+        x= pd.cut(disct_df[count], 10)
+        y= pd.get_dummies(x, prefix=None, prefix_sep='_', dummy_na=False, columns=None, sparse=False, drop_first=False)
+        z[:,i*10:(i*10+10)] = y
+    return z
+		
+final_op= interval(disct_df)
+#np.savetxt('C:\\Users\\Devanshu\\Desktop\\feature_discretized.csv',final_op,fmt='%5s',delimiter=',',newline='\n')
+
+dummies_array= np.asarray(final_op)
+dummies_array.shape
+
+# Here I have converted every 8bit to 1bit greyscale pixel. Likewise reshaped the array.
+
+dummies_array=dummies_array.reshape(148516,50,8)
+
+# Greyscale conversion on all the data
+
+temp = np.zeros((dummies_array.shape[0],dummies_array.shape[1]))
+for i in range(dummies_array.shape[0]):
+    for j in range(dummies_array.shape[1]):
+        temp[i,j] = np.sum(2**np.arange(7,-1,-1)*dummies_array[i,j,:])
+				
+print(temp)
+np.savetxt('C:/Users/Devanshu/Desktop/faltu/greyscale.csv',temp,fmt='%5s',delimiter=',',newline='\n')
